@@ -1,6 +1,36 @@
 import RangeSelector from "@/components/common/RangeSelector";
+import { Flight } from "@/data/flights";
+import { customDateString } from "@/utility/customDateString";
+import { removeDuplicates } from "@/utility/removeDuplicates";
+import { useCallback, useMemo } from "react";
 
-export default function FilterSidebar() {
+export default function FilterSidebar({
+  flights,
+  setFilters,
+  departureTimeRange,
+  arrivalTimeRange,
+  ...filters
+}: {
+  flights?: Flight[];
+  departureTimeRange: { min: string; max: string } | null;
+  arrivalTimeRange: { min: string; max: string } | null;
+  setFilters: (filters: any) => void;
+}) {
+  const sortedTimes = useCallback(
+    (start?: boolean) => {
+      return removeDuplicates(
+        flights?.map((flight) =>
+          start
+            ? flight.stops[0]?.arrivalTime
+            : flight.stops[flight.stops.length - 1]?.arrivalTime
+        )
+      ).sort((a, b) => {
+        return new Date(a).getTime() - new Date(b).getTime();
+      });
+    },
+    [flights]
+  );
+
   return (
     <div
       style={{ boxShadow: "0px 4px 4px 0px #8D8D8D40" }}
@@ -13,24 +43,90 @@ export default function FilterSidebar() {
             label: "Stop",
             value: "stops",
             options: [
-              { label: "Nonstop(23)", value: "Nonstop", minAmount: "$110" },
-              { label: "Nonstop(23)", value: "Nonstop", minAmount: "$110" },
+              {
+                label: `Nonstop(${
+                  flights?.filter((val) => val.stops.length === 2).length
+                })`,
+                value: "Nonstop",
+                minAmount:
+                  "$" +
+                  Math.min(
+                    ...(flights
+                      ?.filter((val) => val.stops.length === 2)
+                      ?.map((val) => val.pricePerStop) ?? [0])
+                  ),
+              },
+              {
+                label: `1 Stop (${
+                  flights?.filter((val) => val.stops.length === 3).length
+                })`,
+                value: "1_stop",
+                minAmount:
+                  "$" +
+                  Math.min(
+                    ...(flights
+                      ?.filter((val) => val.stops.length === 3)
+                      ?.map((val) => val.pricePerStop) ?? [0])
+                  ),
+              },
+              {
+                label: `2+ Stops (${
+                  flights?.filter((val) => val.stops.length > 3).length
+                })`,
+                value: "2+_stop",
+                minAmount:
+                  "$" +
+                  Math.min(
+                    ...(flights
+                      ?.filter((val) => val.stops.length > 3)
+                      ?.map((val) => val.pricePerStop) ?? [0])
+                  ),
+              },
             ],
           },
           {
             label: "Airlines",
             value: "airline",
-            options: [
-              { label: "Nonstop(23)", value: "Nonstop", minAmount: "$110" },
-              { label: "Nonstop(23)", value: "Nonstop", minAmount: "$110" },
-            ],
+            options: removeDuplicates(flights?.map((val) => val.airline)).map(
+              (airline) => ({
+                label: airline,
+                value: airline,
+                minAmount:
+                  "$" +
+                  Math.min(
+                    ...(flights
+                      ?.filter((val) => val.airline === airline)
+                      ?.map((val) => val.pricePerStop) ?? [0])
+                  ),
+              })
+            ),
           },
           {
             label: "Travel and Baggage",
-            value: "airline",
+            value: "travelBaggage",
             options: [
-              { label: "Nonstop(23)", value: "Nonstop", minAmount: "$110" },
-              { label: "Nonstop(23)", value: "Nonstop", minAmount: "$110" },
+              {
+                label: "Carry-on bag",
+                value: "carry-on",
+                minAmount:
+                  "$" +
+                  Math.min(
+                    ...(flights
+                      ?.filter((val) => val.checkedBag)
+                      ?.map((val) => val.pricePerStop) ?? [0])
+                  ),
+              },
+              {
+                label: "Checked bag",
+                value: "checked-bag",
+                minAmount:
+                  "$" +
+                  Math.min(
+                    ...(flights
+                      ?.filter((val) => !val.checkedBag)
+                      ?.map((val) => val.pricePerStop) ?? [0])
+                  ),
+              },
             ],
           },
         ].map((filter, index) => (
@@ -44,8 +140,27 @@ export default function FilterSidebar() {
                 <input
                   type="checkbox"
                   id={option.value}
-                  name={option.value}
-                  value={option.value}
+                  checked={
+                    filters[filter.value]?.includes(option.value) ? true : false
+                  }
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setFilters((filters: {}) => ({
+                        ...filters,
+                        [filter.value]: [
+                          ...(filters[filter.value] ?? []),
+                          option.value,
+                        ],
+                      }));
+                    } else {
+                      setFilters((filters: {}) => ({
+                        ...filters,
+                        [filter.value]: filters[filter.value]?.filter(
+                          (val: string) => val !== option.value
+                        ),
+                      }));
+                    }
+                  }}
                   className="h-4 w-4"
                 />
                 <label htmlFor={option.value} className="flex-grow">
@@ -59,32 +174,55 @@ export default function FilterSidebar() {
         <div className="px-4 py-5 flex flex-col gap-6">
           <div className="-mb-2 text-sm font-semibold">Departure Time</div>
           <RangeSelector
-            ranges={[
-              { label: "Mon 5:00 AM", value: "1" },
-              { label: "Mon 8:00 AM", value: "2" },
-              { label: "Mon 11:00 AM", value: "3" },
-              { label: "Tue 12:00 AM", value: "4" },
-            ]}
-            value={{ min: "1", max: "3" }}
-            onChange={() => {}}
+            ranges={sortedTimes(true).map((time) => ({
+              label: customDateString(time),
+              value: time,
+            }))}
+            value={
+              departureTimeRange ?? {
+                min: sortedTimes(true)[0],
+                max: sortedTimes(true)[sortedTimes(true).length - 1],
+              }
+            }
+            onChange={(val) => {
+              setFilters((filters: {}) => ({
+                ...filters,
+                departureTimeRange: val,
+              }));
+            }}
           />
         </div>
 
         <div className="px-4 py-5 flex flex-col gap-6">
           <div className="-mb-2 text-sm font-semibold">Arrival Time</div>
           <RangeSelector
-            ranges={[
-              { label: "Mon 5:00 AM", value: "1" },
-              { label: "Mon 8:00 AM", value: "2" },
-              { label: "Mon 11:00 AM", value: "3" },
-              { label: "Tue 12:00 AM", value: "4" },
-            ]}
-            value={{ min: "1", max: "3" }}
-            onChange={() => {}}
+            ranges={sortedTimes().map((time) => ({
+              label: customDateString(time),
+              value: time,
+            }))}
+            value={
+              arrivalTimeRange ?? {
+                min: sortedTimes()[0],
+                max: sortedTimes()[sortedTimes().length - 1],
+              }
+            }
+            onChange={(val) => {
+              setFilters((filters: {}) => ({
+                ...filters,
+                arrivalTimeRange: val,
+              }));
+            }}
           />
         </div>
         <div className="flex gap-3 px-2 py-3">
-          <button className="focus:outline-none font-semibold text-[#482A89] hover:scale-110 px-3 py-2 w-full duration-300">
+          <button
+            onClick={() => {
+              setFilters({
+                preference: "RECOMMENDED",
+              });
+            }}
+            className="focus:outline-none font-semibold text-[#482A89] hover:scale-110 px-3 py-2 w-full duration-300"
+          >
             Reset
           </button>
           <button className="focus:outline-none font-semibold bg-[#482A89] text-white hover:opacity-80 rounded px-3 py-2 w-full duration-300">

@@ -26,8 +26,9 @@ export default function Footer2({
   return (
     <div className="-my-1 flex items-center gap-4">
       <span className="text-sm font-normal">
-        {Math.min(...flight.stops.map((stop) => stop.seatsBooked))} seats
-        remaining
+        {flight.totalSeats -
+          Math.max(...flight.stops.map((stop) => stop.seatsBooked))}{" "}
+        seats remaining
       </span>
       <span
         className={

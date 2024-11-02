@@ -2,16 +2,41 @@
 import React, { useState, useEffect, useRef } from "react";
 import { DownArrowIcon } from "./Icons";
 
-export default function CustomDropdown({
+interface OptionType {
+  value: string;
+  label: string;
+  keywords?: string[];
+  className?: string;
+}
+
+interface CustomDropdownProps {
+  value: string;
+  onChange: (value: string) => void;
+  options?: OptionType[];
+  customIcon?: React.ElementType;
+  icon?: React.ElementType;
+  readOnly?: boolean;
+  hideSelectedOption?: boolean;
+  disableOnClick?: boolean;
+  closeDropdownToggle?: boolean;
+  disableOptionWrapper?: boolean;
+  disabled?: boolean;
+  placeholder?: string;
+  className?: string;
+  optionClassName?: string;
+  optionsStyle?: React.CSSProperties;
+  iconClassName?: string;
+  textClassName?: string;
+  optionsWrapperClassName?: string;
+  dropdownPosition?: string; // "top" or "bottom"
+  search?: boolean;
+  optionsBoxMaxHeight?: string;
+}
+
+export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   value,
   onChange,
   options = [],
-  //   [
-  //     {
-  //         value:'',
-  //         label:''
-  //     }
-  //   ]
   customIcon,
   icon,
   readOnly = false,
@@ -28,17 +53,17 @@ export default function CustomDropdown({
   textClassName = "",
   optionsWrapperClassName = "",
   dropdownPosition = "",
-  // top
   search = false,
   optionsBoxMaxHeight = "max-h-64",
-}) {
+}) => {
   const [openMenu, setOpenMenu] = useState(false);
-  const [dropdown_position, set_dropdown_position] = useState("bottom");
-  // bottom,top
-  const inputFieldRef = useRef(null);
-  const optionsRef = useRef([]);
-  const dropdownDisplayFieldRef = useRef(null);
-  const containerRef = useRef(null);
+  const [dropdown_position, set_dropdown_position] = useState<"bottom" | "top">(
+    "bottom"
+  );
+  const inputFieldRef = useRef<HTMLInputElement | null>(null);
+  const optionsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const dropdownDisplayFieldRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const [optionsScrollbar, setOptionsScrollbar] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
@@ -54,41 +79,46 @@ export default function CustomDropdown({
 
   useEffect(() => {
     setOpenMenu(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [closeDropdownToggle]);
 
   useEffect(() => {
     const dropdownPositionChecker = setInterval(() => {
       if (
-        containerRef &&
+        containerRef.current &&
         window.innerHeight -
-          (containerRef?.current?.getBoundingClientRect()?.top ?? 0) +
+          (containerRef.current.getBoundingClientRect()?.top ?? 0) +
           256 >
           320
-      )
+      ) {
         set_dropdown_position("bottom");
-      else set_dropdown_position("top");
+      } else {
+        set_dropdown_position("top");
+      }
     }, 1000);
 
     return () => clearInterval(dropdownPositionChecker);
   }, [containerRef, dropdownPosition]);
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpenMenu(false);
       }
     };
 
-    document?.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
-      document?.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   const CustomIcon = customIcon;
   const Icon = icon;
+
   return (
     <div
       ref={containerRef}
@@ -103,7 +133,7 @@ export default function CustomDropdown({
       <div
         onClick={() => {
           if (readOnly) return;
-          inputFieldRef?.current?.focus();
+          inputFieldRef.current?.focus();
           setOpenMenu((openMenu) => !openMenu);
         }}
         className={
@@ -119,7 +149,7 @@ export default function CustomDropdown({
             value={
               openMenu
                 ? searchValue
-                : options.find((option) => option.value === value)?.word
+                : options.find((option) => option.value === value)?.label ?? ""
             }
             ref={inputFieldRef}
             onKeyDown={(e) => {
@@ -152,8 +182,7 @@ export default function CustomDropdown({
             }
           >
             {value
-              ? options.find((option) => option.value === value)?.word ??
-                options.find((option) => option.value === value)?.label
+              ? options.find((option) => option.value === value)?.label
               : placeholder}
           </div>
         )}
@@ -180,13 +209,13 @@ export default function CustomDropdown({
             ? dropdown_position
             : dropdownPosition) === "top"
             ? {
-                marginBottom: dropdownDisplayFieldRef?.current?.offsetHeight,
+                marginBottom: dropdownDisplayFieldRef.current?.offsetHeight,
               }
             : {
-                marginTop: dropdownDisplayFieldRef?.current?.offsetHeight,
+                marginTop: dropdownDisplayFieldRef.current?.offsetHeight,
               }),
         }}
-        className={"w-full flex flex-col absolute z-50 dropdown"}
+        className={"w-full flex flex-col absolute z-[100] dropdown"}
       >
         <div
           className={
@@ -212,19 +241,22 @@ export default function CustomDropdown({
                       ) === searchValue.toLowerCase()
                 );
               }
+              return false;
             })
             .filter((val) => !hideSelectedOption || val.value !== value)
             .map((option, index) => {
               return (
                 <div
                   key={index}
-                  ref={(el) => (optionsRef.current[index] = el)}
+                  ref={(el) => {
+                    optionsRef.current[index] = el;
+                  }}
                   tabIndex={0}
                   className={
                     "bg-white cursor-pointer flex flex-row items-center text-left focus:bg-gray-100 " +
                     (disableOnClick ? "" : "hover:bg-gray-100") +
                     " " +
-                    (disableOptionWrapper ? "" : "pl-3 p-1") +
+                    (disableOptionWrapper ? "" : "pl-3 p-2") +
                     " " +
                     optionClassName +
                     " " +
@@ -258,4 +290,4 @@ export default function CustomDropdown({
       </div>
     </div>
   );
-}
+};
