@@ -10,7 +10,7 @@ export default function PreferenceSelector({
   setPreference,
 }: {
   preference: string;
-  setPreference: (preference: string) => void;
+  setPreference: (preference: "RECOMMENDED" | "CHEAPEST" | "FASTEST") => void;
 }) {
   const preferences = useMemo(() => {
     return [
@@ -47,7 +47,9 @@ export default function PreferenceSelector({
               ? "text-[#5D36AF] border-[#5D36AF]"
               : "text-black"
           }`}
-          onClick={() => setPreference(item.value)}
+          onClick={() =>
+            setPreference(item.value as "RECOMMENDED" | "CHEAPEST" | "FASTEST")
+          }
         >
           <item.icon className={`w-4 h-4`} />
           <div className="flex flex-col gap-1">

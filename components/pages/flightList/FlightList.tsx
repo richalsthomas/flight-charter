@@ -6,11 +6,25 @@ import FilterSidebar from "./components/FilterSidebar";
 import Advertisements from "./components/Advertisements";
 import PreferenceSelector from "./components/PreferenceSelector";
 import FlightData from "./components/flightData/FlightData";
-import { filterStops } from "./filters/fromToFilter";
 import { filtering } from "./filterning";
 
+export type FiltersType = {
+  airline: string[];
+  class: string | null;
+  trip: string | null;
+  travelFrom: string | null | undefined;
+  travelTo: string | null | undefined;
+  departureDate: Date | null | undefined;
+  returnDate: string | null;
+  travellers: string | null;
+  stops: string[];
+  travelBaggage: string[];
+  departureTimeRange: { min: string; max: string } | null;
+  arrivalTimeRange: { min: string; max: string } | null;
+  preference: "RECOMMENDED" | "CHEAPEST" | "FASTEST";
+};
 export default function FlightList() {
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<FiltersType>({
     airline: [],
     class: null,
     trip: null,
@@ -59,7 +73,7 @@ export default function FlightList() {
                 setFilters((filters) => ({ ...filters, preference }))
               }
             />
-            {filteredFlights.map((flight, index) => (
+            {filteredFlights.map((flight) => (
               <FlightData key={flight.id} flight={flight} />
             ))}
           </div>

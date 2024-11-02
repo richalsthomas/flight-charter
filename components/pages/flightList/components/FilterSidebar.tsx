@@ -2,19 +2,25 @@ import RangeSelector from "@/components/common/RangeSelector";
 import { Flight } from "@/data/flights";
 import { customDateString } from "@/utility/customDateString";
 import { removeDuplicates } from "@/utility/removeDuplicates";
-import { useCallback, useMemo } from "react";
+import { Dispatch, SetStateAction, useCallback } from "react";
+import { FiltersType } from "../FlightList";
 
 export default function FilterSidebar({
   flights,
   setFilters,
   departureTimeRange,
   arrivalTimeRange,
-  ...filters
+  travelBaggage,
+  stops,
+  airline,
 }: {
   flights?: Flight[];
   departureTimeRange: { min: string; max: string } | null;
   arrivalTimeRange: { min: string; max: string } | null;
-  setFilters: (filters: any) => void;
+  setFilters: Dispatch<SetStateAction<FiltersType>>;
+  travelBaggage: string[];
+  stops: string[];
+  airline: string[];
 }) {
   const sortedTimes = useCallback(
     (start?: boolean) => {
@@ -135,40 +141,48 @@ export default function FilterSidebar({
               <span className="flex-grow">{filter.label}</span>
               <span>From</span>
             </div>
-            {filter.options.map((option, index) => (
-              <div key={index} className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  id={option.value}
-                  checked={
-                    filters[filter.value]?.includes(option.value) ? true : false
-                  }
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setFilters((filters: {}) => ({
-                        ...filters,
-                        [filter.value]: [
-                          ...(filters[filter.value] ?? []),
-                          option.value,
-                        ],
-                      }));
-                    } else {
-                      setFilters((filters: {}) => ({
-                        ...filters,
-                        [filter.value]: filters[filter.value]?.filter(
-                          (val: string) => val !== option.value
-                        ),
-                      }));
+            {filter.options.map((option, index) => {
+              const currentFilteres =
+                option.value === "travelBaggage"
+                  ? travelBaggage
+                  : option.value === "stops"
+                  ? stops
+                  : airline;
+              return (
+                <div key={index} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    id={option.value}
+                    checked={
+                      currentFilteres?.includes(option.value) ? true : false
                     }
-                  }}
-                  className="h-4 w-4"
-                />
-                <label htmlFor={option.value} className="flex-grow">
-                  {option.label}
-                </label>
-                <span>{option.minAmount}</span>
-              </div>
-            ))}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setFilters((filters: FiltersType) => ({
+                          ...filters,
+                          [filter.value]: [
+                            ...(currentFilteres ?? []),
+                            option.value,
+                          ],
+                        }));
+                      } else {
+                        setFilters((filters: FiltersType) => ({
+                          ...filters,
+                          [filter.value]: currentFilteres?.filter(
+                            (val: string) => val !== option.value
+                          ),
+                        }));
+                      }
+                    }}
+                    className="h-4 w-4"
+                  />
+                  <label htmlFor={option.value} className="flex-grow">
+                    {option.label}
+                  </label>
+                  <span>{option.minAmount}</span>
+                </div>
+              );
+            })}
           </div>
         ))}
         <div className="px-4 py-5 flex flex-col gap-6">
@@ -185,7 +199,7 @@ export default function FilterSidebar({
               }
             }
             onChange={(val) => {
-              setFilters((filters: {}) => ({
+              setFilters((filters: FiltersType) => ({
                 ...filters,
                 departureTimeRange: val,
               }));
@@ -207,7 +221,7 @@ export default function FilterSidebar({
               }
             }
             onChange={(val) => {
-              setFilters((filters: {}) => ({
+              setFilters((filters: FiltersType) => ({
                 ...filters,
                 arrivalTimeRange: val,
               }));
@@ -218,6 +232,18 @@ export default function FilterSidebar({
           <button
             onClick={() => {
               setFilters({
+                airline: [],
+                class: null,
+                trip: null,
+                travelFrom: null,
+                travelTo: null,
+                departureDate: null,
+                returnDate: null,
+                travellers: null,
+                stops: [],
+                travelBaggage: [],
+                departureTimeRange: null,
+                arrivalTimeRange: null,
                 preference: "RECOMMENDED",
               });
             }}

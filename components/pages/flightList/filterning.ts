@@ -1,7 +1,8 @@
 import { Flight } from "@/data/flights";
 import { filterStops } from "./filters/fromToFilter";
+import { FiltersType } from "./FlightList";
 
-export const filtering = (flights: Flight[], filters: any) => {
+export const filtering = (flights: Flight[], filters: FiltersType) => {
   let tempFilterredFlights: Flight[] = flights;
 
   if (filters.travelFrom && filters.travelTo)
@@ -52,12 +53,12 @@ export const filtering = (flights: Flight[], filters: any) => {
       console.log(
         flight.totalSeats -
           Math.max(...flight.stops.map((stop) => stop.seatsBooked)),
-        parseInt(filters.travellers)
+        parseInt(filters.travellers ?? "0")
       );
       return (
         flight.totalSeats -
           Math.max(...flight.stops.map((stop) => stop.seatsBooked)) >=
-        parseInt(filters.travellers)
+        parseInt(filters.travellers ?? "0")
       );
     });
   }
@@ -88,8 +89,9 @@ export const filtering = (flights: Flight[], filters: any) => {
   if (filters.departureTimeRange) {
     tempFilterredFlights = tempFilterredFlights.filter((flight) => {
       return (
-        flight.stops[0].arrivalTime >= filters.departureTimeRange.min &&
-        flight.stops[0].arrivalTime <= filters.departureTimeRange.max
+        flight.stops[0].arrivalTime >= (filters.departureTimeRange?.min ?? 0) &&
+        flight.stops[0].arrivalTime <=
+          (filters.departureTimeRange?.max ?? Infinity)
       );
     });
   }
@@ -98,9 +100,9 @@ export const filtering = (flights: Flight[], filters: any) => {
     tempFilterredFlights = tempFilterredFlights.filter((flight) => {
       return (
         flight.stops[flight.stops.length - 1].arrivalTime >=
-          filters.arrivalTimeRange.min &&
+          (filters.arrivalTimeRange?.min ?? 0) &&
         flight.stops[flight.stops.length - 1].arrivalTime <=
-          filters.arrivalTimeRange.max
+          (filters.arrivalTimeRange?.max ?? Infinity)
       );
     });
   }

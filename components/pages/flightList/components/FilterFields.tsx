@@ -5,6 +5,8 @@ import { Abel } from "next/font/google";
 import { CustomDropdown } from "@/components/common/CustomDropdown";
 import { Flight } from "@/data/flights";
 import { removeDuplicates } from "@/utility/removeDuplicates";
+import { Dispatch, SetStateAction } from "react";
+import { FiltersType } from "../FlightList";
 
 const abel = Abel({
   subsets: ["latin"],
@@ -30,7 +32,7 @@ export default function FilterFields({
   travelTo?: string | null;
   departureDate?: Date | null;
   travellers?: string | null;
-  setFilters: (filters: any) => void;
+  setFilters: Dispatch<SetStateAction<FiltersType>>;
 }) {
   return (
     <div style={{ boxShadow: "0px 4px 4px 0px #8D8D8D40" }} className="w-full">
@@ -45,7 +47,10 @@ export default function FilterFields({
               ).map((airline) => ({ label: airline, value: airline }))}
               value={airline as string}
               onChange={(value) => {
-                setFilters((filters: {}) => ({ ...filters, airline: [value] }));
+                setFilters((filters: FiltersType) => ({
+                  ...filters,
+                  airline: [value],
+                }));
               }}
             />
             <CustomDropdown
@@ -59,7 +64,10 @@ export default function FilterFields({
               }))}
               value={classSelect as string}
               onChange={(value) => {
-                setFilters((filters: {}) => ({ ...filters, class: value }));
+                setFilters((filters: FiltersType) => ({
+                  ...filters,
+                  class: value,
+                }));
               }}
             />
             <CustomDropdown
@@ -70,7 +78,10 @@ export default function FilterFields({
               ).map((trip) => ({ label: trip, value: trip }))}
               value={trip as string}
               onChange={(value) => {
-                setFilters((filters: {}) => ({ ...filters, trip: value }));
+                setFilters((filters: FiltersType) => ({
+                  ...filters,
+                  trip: value,
+                }));
               }}
             />
           </div>
@@ -99,7 +110,7 @@ export default function FilterFields({
                 }))}
                 value={travelFrom as string}
                 onChange={(value) => {
-                  setFilters((filters: {}) => ({
+                  setFilters((filters: FiltersType) => ({
                     ...filters,
                     travelFrom: value,
                   }));
@@ -109,7 +120,7 @@ export default function FilterFields({
             <div className="shrink-0 flex items-center">
               <button
                 onClick={() => {
-                  setFilters((filters: {}) => ({
+                  setFilters((filters: FiltersType) => ({
                     ...filters,
                     travelFrom: travelTo,
                     travelTo: travelFrom,
@@ -152,7 +163,7 @@ export default function FilterFields({
                   }))}
                 value={travelTo as string}
                 onChange={(value) => {
-                  setFilters((filters: {}) => ({
+                  setFilters((filters: FiltersType) => ({
                     ...filters,
                     travelTo: value,
                   }));
@@ -170,7 +181,7 @@ export default function FilterFields({
               <DatePicker
                 selected={departureDate}
                 onChange={(date) =>
-                  setFilters((filters: {}) => ({
+                  setFilters((filters: FiltersType) => ({
                     ...filters,
                     departureDate: date,
                   }))
@@ -194,7 +205,7 @@ export default function FilterFields({
                 className="rounded border border-[#A1B0CC] pl-9 py-2.5 w-52"
                 value={travellers ?? ""}
                 onChange={(e) => {
-                  setFilters((filters: {}) => ({
+                  setFilters((filters: FiltersType) => ({
                     ...filters,
                     travellers: e.target.value,
                   }));
@@ -213,9 +224,10 @@ export default function FilterFields({
             </button>
             <button
               onClick={() => {
-                setFilters({
+                setFilters((filters) => ({
+                  ...filters,
                   preference: "RECOMMENDED",
-                });
+                }));
               }}
               className="focus:outline-none font-semibold border border-[#482A89] rounded text-[#482A89] hover:text-white hover:bg-[#482A89] py-2 px-6 duration-300"
             >
